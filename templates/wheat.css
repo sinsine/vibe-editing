@@ -1,0 +1,275 @@
+﻿/* ============================================================================
+   STARTER LIBRARY — 起手素材，不是强制规范。
+   这是本 skill 被提炼出来的那部片的真实共享库（暗金 cinematic 风格）。
+   它示范了 frame.md 里的纪律如何落成 CSS/JS：单一光池、保留带、三套字域、
+   1px 细线、共享图形（麦穗/人物/手/点轴/时间轴）。
+   换主题时：保留结构与保留带，替换色板、字体族与图形造型。
+   Loaded by every frame via <link> INSIDE the frame's <template>.
+   ========================================================================= *//* ============================================================================
+   wheat.css — the film's shared visual system.
+   Loaded by every frame via <link> INSIDE the frame's <template>.
+   Paths here are file-relative (compositions/lib/) and the assembler rewrites
+   them for the host page.
+
+   Contract (see frame.md):
+     - one ground, one warm light pool per frame
+     - gold = chosen / lit / now ; slate = unobserved / passed / not-yet
+     - display type lives in y 140-842 ; the subtitle band y 872-1024 is RESERVED
+     - every frame-relative unit is cqw/cqh against #root (never vw)
+   ========================================================================= */
+
+:root {
+  /* ground */
+  --void: #07070a;
+  --ink: #0b0a0e;
+  --ink-raised: #131118;
+  /* gold — the metal */
+  --gold-100: #fbf1d2;
+  --gold-300: #f2d992;
+  --gold-500: #e0b45c;
+  --gold-700: #b07e2e;
+  --gold-900: #5c3f13;
+  /* slate — the cool counter-register */
+  --slate-200: #a8b8c6;
+  --slate-400: #6c8095;
+  --slate-600: #3b4a5a;
+  --slate-800: #1e2731;
+  /* text */
+  --paper: #f2ece0;
+  --paper-muted: #a79c88;
+  --paper-hint: #6a6153;
+  /* functional */
+  --scrim: rgba(7, 7, 10, 0.92);
+  --hairline: rgba(224, 180, 92, 0.22);
+  --hairline-cool: rgba(108, 128, 149, 0.25);
+  --glow-warm: rgba(224, 180, 92, 0.35);
+  --glow-hot: rgba(251, 241, 210, 0.55);
+  /* per-frame light pool: each frame overrides these on #root or .ground */
+  --pool-x: 50%;
+  --pool-y: 42%;
+  --pool-w: 78cqw;
+  --pool-h: 88cqh;
+  --pool-strength: 0.5;
+  --ray-angle: -18deg;
+}
+
+/* ---------- root ---------------------------------------------------------- */
+
+#root {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  container-type: size;
+  background: var(--void);
+  color: var(--paper);
+  font-family: 'WheatSansRegular', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- ground: base + one warm pool + vignette + grain ---------------- */
+/* Full-bleed backgrounds ride on a .clip layer, never on #root itself, so the
+   frame's ground is a real timed element the runtime can hide. */
+
+.ground {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  overflow: hidden;
+}
+.ground .pool {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--pool-w);
+  height: var(--pool-h);
+  transform: translate(-50%, -50%);
+  margin-left: calc(var(--pool-x) - 50%);
+  margin-top: calc(var(--pool-y) - 50%);
+  background: radial-gradient(
+    closest-side,
+    rgba(224, 180, 92, calc(var(--pool-strength) * 0.62)) 0%,
+    rgba(176, 126, 46, calc(var(--pool-strength) * 0.34)) 34%,
+    rgba(92, 63, 19, calc(var(--pool-strength) * 0.16)) 62%,
+    rgba(7, 7, 10, 0) 100%
+  );
+  filter: blur(2px);
+  pointer-events: none;
+}
+.ground .vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 78% 72% at 50% 44%, rgba(0, 0, 0, 0) 38%, rgba(0, 0, 0, 0.72) 100%);
+  pointer-events: none;
+}
+.ground .grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>");
+  pointer-events: none;
+}
+
+/* volumetric shafts — at most three, always soft */
+.rays { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.ray {
+  position: absolute;
+  top: -30cqh;
+  left: 50%;
+  width: 12cqw;
+  height: 160cqh;
+  transform-origin: 50% 0;
+  background: linear-gradient(to bottom, rgba(251, 241, 210, 0.10), rgba(224, 180, 92, 0.05) 45%, rgba(7, 7, 10, 0));
+  filter: blur(26px);
+}
+
+/* ---------- type registers ------------------------------------------------ */
+/* Latin falls through to the family's own latin; weights are real files, never
+   synthesised. CJK display keeps near-zero tracking (see frame.md). */
+
+.t-display    { font-family: 'WheatDisplay', sans-serif; font-size: 132px; line-height: 1.06; letter-spacing: 0.005em; }
+.t-display-lg { font-family: 'WheatDisplay', sans-serif; font-size: 196px; line-height: 1.00; letter-spacing: 0.005em; }
+.t-h1         { font-family: 'WheatDisplay', sans-serif; font-size: 96px;  line-height: 1.12; letter-spacing: 0.005em; }
+.t-h2         { font-family: 'WheatSans',    sans-serif; font-size: 64px;  line-height: 1.25; letter-spacing: 0.01em; }
+.t-body       { font-family: 'WheatSansRegular', sans-serif; font-size: 40px; line-height: 1.6; letter-spacing: 0.01em; }
+.t-parable    { font-family: 'WheatSerif', serif; font-size: 116px; line-height: 1.18; letter-spacing: 0.04em; }
+.t-parable-sm { font-family: 'WheatSerif', serif; font-size: 56px;  line-height: 1.45; letter-spacing: 0.03em; }
+.t-figure     { font-family: 'WheatMonoBold', monospace; font-size: 168px; line-height: 1.0; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.t-figure-sm  { font-family: 'WheatMono', monospace; font-size: 40px; line-height: 1.4; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
+.t-label      { font-family: 'WheatMonoBold', monospace; font-size: 25px; line-height: 1.3; letter-spacing: 0.16em; text-transform: uppercase; }
+
+.gold   { color: var(--gold-500); }
+.gold-l { color: var(--gold-300); }
+.gold-h { color: var(--gold-100); }
+.gold-d { color: var(--gold-700); }
+.paper  { color: var(--paper); }
+.muted  { color: var(--paper-muted); }
+.hint   { color: var(--paper-hint); }
+.slate  { color: var(--slate-400); }
+.slate-l{ color: var(--slate-200); }
+
+/* gold needs the metal to read as metal, not as yellow paint */
+.metal {
+  background: linear-gradient(178deg, var(--gold-100) 0%, var(--gold-500) 42%, var(--gold-700) 78%, var(--gold-300) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.bloom     { filter: drop-shadow(0 0 24px var(--glow-warm)); }
+.bloom-hot { filter: drop-shadow(0 0 14px var(--glow-hot)) drop-shadow(0 0 44px var(--glow-warm)); }
+
+/* ---------- structure ----------------------------------------------------- */
+
+.hairline      { background: var(--hairline); height: 1px; }
+.hairline-cool { background: var(--hairline-cool); height: 1px; }
+.hairline-v    { background: var(--hairline); width: 1px; }
+
+/* the reserved subtitle band — every frame's subtitle clip sits in here and
+   nothing else is allowed to */
+.band-sub {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 872px;
+  height: 152px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.band-sub .scrim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: -80px;
+  background: linear-gradient(to top, var(--scrim) 0%, rgba(7, 7, 10, 0.72) 42%, rgba(7, 7, 10, 0) 100%);
+}
+.subtitle {
+  position: relative;
+  font-family: 'WheatSans', sans-serif;
+  font-size: 38px;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  color: var(--paper);
+  text-align: center;
+  max-width: 1500px;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.85);
+}
+
+/* display band: y 140 - 842 */
+.band-display {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 140px;
+  height: 702px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.band-chrome {
+  position: absolute;
+  left: 100px;
+  right: 100px;
+  top: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ---------- pictograms ---------------------------------------------------- */
+
+.ear { display: block; }
+.ear path, .ear ellipse { transition: none; }
+
+.dust { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.dust i {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--gold-300);
+  display: block;
+}
+
+/* a soft horizontal glow strip, for horizons and light bleeds */
+.horizon {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(to right, rgba(224, 180, 92, 0) 0%, rgba(242, 217, 146, 0.55) 50%, rgba(224, 180, 92, 0) 100%);
+  filter: blur(1px);
+}
+
+/* ---------- shared micro-components -------------------------------------- */
+
+.fig-block { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.fig-block .note { font-family: 'WheatMono', monospace; font-size: 30px; color: var(--paper-muted); letter-spacing: 0.02em; }
+
+.tick-row { display: flex; align-items: flex-end; gap: 0; }
+.tick { width: 1px; background: var(--hairline-cool); }
+.tick.major { background: rgba(168, 184, 198, 0.55); }
+
+.card {
+  border: 1px solid var(--hairline-cool);
+  background: rgba(19, 17, 24, 0.55);
+  padding: 26px 34px;
+}
+.card.gold-edge { border-color: var(--hairline); }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--hairline-cool);
+  padding: 8px 18px;
+  font-family: 'WheatMono', monospace;
+  font-size: 25px;
+  letter-spacing: 0.08em;
+  color: var(--paper-muted);
+}
+.chip.on { border-color: var(--gold-700); color: var(--gold-300); }
+

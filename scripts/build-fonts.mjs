@@ -1,0 +1,130 @@
+// Builds the film's own webfonts: subsets the locally-installed fonts down to the
+// characters this film actually uses, writes woff2 into the project, and emits the
+// @font-face sheet.
+//
+// Why not name a system font in CSS: `lint` rejects a named family that has no
+// in-file @font-face (font_family_without_font_face), and HyperFrames' alias table
+// has no CJK entry at all. Shipping subsets is the only path that is lint-clean,
+// deterministic, and offline.
+//
+// Both inputs are project-specific and live in vibe.config.json: `fonts` (the faces to
+// subset — they name font files installed on this machine) and `charsetExtra` (the
+// deliberate margin below).
+//
+// Re-run after editing any copy:  node tools/build-fonts.mjs
+import fs from 'node:fs';
+import path from 'node:path';
+import subsetFont from 'subset-font';
+
+import { loadConfig } from './lib/vibe-config.mjs';
+const cfg = loadConfig();
+
+const PROJ = cfg.proj;          // videos/<slug> — the tree that reads these subsets
+const OUT = cfg.fontsDir;       // = <PROJ>/assets/fonts
+fs.mkdirSync(OUT, { recursive: true });
+
+// ---------- 1. collect every character the film can render ----------
+// In order of authority: the storyboard is what actually gets rendered, then the brief,
+// then the design spec, then whatever datasets the film is allowed to print, then the cues.
+const dataJsons = fs.existsSync(cfg.dataDir)
+  ? fs.readdirSync(cfg.dataDir).filter((f) => f.toLowerCase().endsWith('.json')).sort()
+    .map((f) => path.join(cfg.dataDir, f))
+  : [];
+const SOURCES = [
+  cfg.files.storyboard,
+  cfg.files.brief,
+  cfg.files.frameSpec,
+  ...dataJsons,
+  cfg.files.cueMap,
+];
+
+// A deliberate margin so small copy edits don't force a font rebuild. It is the theme's
+// own vocabulary, so it belongs to the project (vibe.config.json -> "charsetExtra",
+// seeded by templates/vibe.config.json) rather than to this script: a new film inherits
+// nothing silently.
+const EXTRA = cfg.charsetExtra ?? '';
+
+const chars = new Set();
+for (const p of SOURCES) {
+  if (!fs.existsSync(p)) { console.warn(`  ! missing source (skipped): ${p}`); continue; }
+  const t = fs.readFileSync(p, 'utf8');
+  for (const ch of t) {
+    const c = ch.codePointAt(0);
+    // keep printable, drop control chars and the private-use glyphs
+    if (c >= 0x20 && c !== 0x7f && !(c >= 0xe000 && c <= 0xf8ff)) chars.add(ch);
+  }
+}
+for (const ch of EXTRA) if (ch.codePointAt(0) >= 0x20) chars.add(ch);
+const text = [...chars].sort().join('');
+const cjkCount = [...chars].filter((c) => /[\u3400-\u9fff\uf900-\ufaff]/.test(c)).length;
+console.log(`charset: ${chars.size} codepoints (${cjkCount} CJK)`);
+
+// ---------- 2. the faces ----------
+// The faces are machine-specific, so they are configured, not hard-coded. `axes` is
+// optional: subset-font receives it as variationAxes, which pins a variable font to a
+// single instance (a weight).
+// A relative `file` is read from <root> first, then from the HyperFrames project, so a
+// theme may keep its own font files next to the frames that use them.
+const resolveFont = (file) => {
+  if (path.isAbsolute(file)) return file;
+  const fromRoot = path.resolve(cfg.root, file);
+  return fs.existsSync(fromRoot) ? fromRoot : path.resolve(PROJ, file);
+};
+
+const faces = Array.isArray(cfg.fonts) ? cfg.fonts : [];
+if (!faces.length) {
+  console.error(`no font faces configured — set "fonts" in ${cfg.configPath}`);
+  console.error('  (init-project.mjs probes the machine for the six roles; templates/vibe.config.json is the example)');
+  process.exit(1);
+}
+const missing = faces.filter((f) => !f.file || !fs.existsSync(resolveFont(f.file)));
+if (missing.length) {
+  console.error(`${missing.length} font file(s) named in ${path.basename(cfg.configPath)} do not exist:`);
+  for (const f of missing) console.error(`  x ${f.css ?? '(no css name)'}  ${f.file ?? '(no file)'}  [role ${f.role ?? '?'}]`);
+  console.error(`fix "fonts" in ${cfg.configPath} — every entry needs a css name and a font file that exists on this machine`);
+  process.exit(1);
+}
+
+const results = [];
+for (const face of faces) {
+  const file = resolveFont(face.file);
+  const src = fs.readFileSync(file);
+  const opts = { targetFormat: 'woff2' };
+  if (face.axes) opts.variationAxes = face.axes;
+  let out;
+  try {
+    out = await subsetFont(src, text, opts);
+  } catch (e) {
+    console.error(`  x subset failed for ${face.css}: ${e.message}`);
+    process.exitCode = 1;
+    continue;
+  }
+  const name = `${face.css}.woff2`;
+  fs.writeFileSync(path.join(OUT, name), out);
+  results.push({ ...face, file, out: name, kb: +(out.length / 1024).toFixed(1), srcMb: +(src.length / 1048576).toFixed(2) });
+  console.log(`  ok ${face.css.padEnd(16)} ${String((out.length / 1024).toFixed(1)).padStart(7)} KB  (from ${(src.length / 1048576).toFixed(2)} MB)`);
+}
+
+// ---------- 3. the @font-face sheet ----------
+const css = [
+  '/* GENERATED by tools/build-fonts.mjs — do not edit by hand.',
+  ` * Subsets of locally installed fonts, cut to this film's ${chars.size}-codepoint charset.`,
+  ' * Rendered output is a video; the font files are used locally to rasterise frames and are',
+  ' * not redistributed. Re-run the generator after changing any on-screen copy. */',
+  '',
+  ...results.flatMap((r) => [
+    '@font-face {',
+    `  font-family: '${r.css}';`,
+    `  src: url('./${r.out}') format('woff2');`,
+    '  font-weight: 400 900;',
+    '  font-style: normal;',
+    '  font-display: block;',
+    '}',
+    '',
+  ]),
+].join('\n');
+fs.writeFileSync(path.join(OUT, 'fonts.css'), css);
+console.log(`\nwrote ${path.join(OUT, 'fonts.css')}`);
+const total = results.reduce((s, r) => s + r.kb, 0);
+console.log(`total shipped: ${total.toFixed(1)} KB across ${results.length} faces`);
+fs.writeFileSync(path.join(OUT, 'charset.txt'), text);

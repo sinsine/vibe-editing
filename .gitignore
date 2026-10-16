@@ -1,0 +1,37 @@
+# never commit a generated project's outputs
+videos/
+audio/
+data/
+renders/
+covers/
+node_modules/
+.hyperframes/
+.migration/
+
+# a project's own config is specific to the machine that built it
+# (it records absolute font paths), so it is ignored by default
+vibe.config.json
+sfx-design.mjs
+cover-copy.json
+scene-plan.json
+
+# keep the skill's own templates tracked
+!templates/
+!scripts/
+!references/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.log
+*.raw
+*.tmp
+
+# the music the user brings is theirs, not ours
+*.m4a
+*.mp3
+*.wav
+!templates/**/*.wav
+
+# python bytecode from any helper a user adds
+__pycache__/
