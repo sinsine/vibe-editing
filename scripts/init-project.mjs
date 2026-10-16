@@ -157,7 +157,21 @@ if (trackArg) {
 }
 
 // ---------------------------------------------------------------- config
+// Start from the shipped template so the defaults live in exactly one place: the
+// Chinese character margin (`charsetExtra`) and the life-window definitions are long
+// and easy to get subtly wrong, and a second copy here would drift from
+// templates/vibe.config.json the first time either is edited.
+let template = {};
+try {
+  const raw = fs.readFileSync(path.join(TEMPLATES, 'vibe.config.json'), 'utf8');
+  template = JSON.parse(raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw);
+  delete template._comment;
+} catch (e) {
+  console.log(`  ! could not read templates/vibe.config.json (${e.message}); using built-in defaults`);
+}
+
 const config = {
+  ...template,
   _comment: 'vibe.config.json — the only project-specific file the tooling reads. See references/00-intake.md.',
   slug,
   title: arg('title', ''),
@@ -168,7 +182,7 @@ const config = {
   language: arg('language', 'zh-CN'),
   platforms,
   fonts: faceList.map((f) => ({ css: f.css, file: f.file.replace(/\\/g, '/'), role: f.role, family: f.family })),
-  charsetExtra: '',
+  _todo: 'charsetExtra and lifeWindows came from templates/vibe.config.json — edit them for this theme',
 };
 write('vibe.config.json', JSON.stringify(config, null, 2) + '\n');
 
