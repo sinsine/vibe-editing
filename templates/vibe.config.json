@@ -1,0 +1,66 @@
+{
+  "_comment": "Example vibe.config.json — the only project-specific file the tooling reads (scripts/lib/vibe-config.mjs). Let init-project.mjs write a real one, or copy this and edit it. JSON has no comments, so every note lives in a _comment key instead; nothing reads those keys. Only \"slug\" is required: loadConfig() merges this file over its built-in defaults, so a half-filled config still runs and the scripts report what is missing rather than failing deep inside a later step. Paths are absolute, or relative to <root>.",
+
+  "_comment_top": "identity of the film. slug names the HyperFrames project folder videos/<slug> and is the one required key. track is the music file as delivered by the user, relative to <root> (null if the film ships without music). fps/width/height are the canvas every frame is authored against — band rows below are in these pixels. language/platforms drive the publishing assets.",
+  "slug": "my-film",
+  "title": "",
+  "track": "my-film.m4a",
+  "fps": 30,
+  "width": 1920,
+  "height": 1080,
+  "language": "zh-CN",
+  "platforms": ["bilibili", "douyin"],
+
+  "bands": {
+    "_comment": "the reserved vertical bands, in canvas pixels — the film's layout law (references/03-design-system.md). audit-still.mjs measures ink and edge energy per row; frame-openings.mjs asserts subtitle ink in [subtitle[0], subtitle[1]]. Change these only if you change the canvas.",
+    "chrome": [60, 120],
+    "display": [140, 842],
+    "gap": [842, 872],
+    "subtitle": [872, 1024]
+  },
+
+  "cue": {
+    "_comment": "subtitle legality gates (sync-storyboard-timings.mjs). maxCharsPerSecond is the reading-speed ceiling for Chinese copy; a cue shorter than minSeconds, or closer than minGapSeconds to its neighbour, is rejected rather than silently rendered.",
+    "maxCharsPerSecond": 6.5,
+    "minSeconds": 1.2,
+    "minGapSeconds": 0.08
+  },
+
+  "timing": {
+    "_comment": "verification tolerances (verify-timing.mjs). Every cut and cue must land within toleranceMs of the fitted grid; the rendered audio is then re-measured acoustically with the per-role windows below.",
+    "toleranceMs": 15,
+    "acousticToleranceMs": {
+      "_comment": "a hit is judged at its attack, a whoosh at its midpoint, a riser at its end, so the acoustic windows are wider than the grid tolerance.",
+      "hit": 25,
+      "whoosh": 80,
+      "riser": 80
+    }
+  },
+
+  "sound": {
+    "_comment": "mix defaults (mix-soundtrack.mjs): bgmGainDb is applied to the music, sfxTrimDb lifts the sfx stem, and the finished mix is checked against targetLufs — bilibili normalises towards -14 LUFS.",
+    "bgmGainDb": -4,
+    "sfxTrimDb": 3.5,
+    "targetLufs": -14
+  },
+
+  "_comment_fonts": "the faces build-fonts.mjs subsets and inject-fonts.mjs inlines. file must name a real font FILE on this machine, because the script subsets it: a named family with no in-file @font-face is rejected by lint, and HyperFrames' alias table has no CJK entry at all. css is the family name the CSS refers to, role is which text register the face serves, and axes is optional — when present it is passed to subset-font as variationAxes, which pins a variable font to one instance (omit it for a static font). init-project.mjs probes the machine's font registry and also records \"family\" for readability; nothing reads that key. The paths below are placeholders — replace every one of them.",
+  "fonts": [
+    { "css": "WheatDisplay", "file": "C:/Windows/Fonts/msyhbd.ttc", "role": "display" },
+    { "css": "WheatSans", "file": "C:/Windows/Fonts/msyh.ttc", "role": "sans" },
+    { "css": "WheatSansRegular", "file": "C:/Windows/Fonts/msyh.ttc", "role": "sansRegular" },
+    { "css": "WheatSerif", "file": "C:/Windows/Fonts/NotoSerifSC-VF.ttf", "role": "serif", "axes": { "wght": 600 } },
+    { "css": "WheatMono", "file": "C:/Windows/Fonts/consola.ttf", "role": "mono" },
+    { "css": "WheatMonoBold", "file": "C:/Windows/Fonts/consolab.ttf", "role": "monoBold" }
+  ],
+
+  "_comment_charsetExtra": "characters to include in the font subset even though no source file contains them yet — a margin so a small copy edit does not force a font rebuild. build-fonts.mjs harvests a charset from STORYBOARD.md, BRIEF.md, frame.md, every data/*.json and audio/cue-map.json, then appends this string. The value below is the reference film's Chinese margin (its own vocabulary plus the words a revision is likely to introduce); replace it with your own, and keep the digits, Latin and punctuation, which cost almost nothing.",
+  "charsetExtra": "\n0123456789%‰+-–—×÷=≈≠≤≥·•…、。，；：？！“”‘’（）《》〈〉【】「」『』〔〕\nABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\n !\"#$&'()*,.+-/:;<=>?@[\\]^_{|}~°\n一二三四五六七八九十百千万亿零两半多少几岁年日月天时分秒\n麦穗麦田麦子苏格拉底柏拉图弟子寓言爱情婚姻恋爱择偶结婚\n最优停止观察期策略选择决定标准概率胜率实验模拟随机顺序\n当场反悔回头摘下手放大更差够好满足最大最好前个百分比\n大学生高中毕业志愿专业实习求职租房城市工作起薪满意\n研究员数据计算证明结论建议记住答案问题时间人生机会后悔\n勇气判断直觉理性数学公式定理极限收敛曲线柱状图轴刻度\n大一二年三四年上学期下学刚走走在路尽头两手空手掌心\n风光线影金色黑深夜清晨黄昏森林树斧头木屑尘埃粒子\n灯亮暗明暗交界深浅远近景别镜头推进拉出俯仰平移\n字幕结论其实但是所以因此如果那么只要就都反而不\n为的是了过着很非常特别尤其甚至继续开始结束停留\n知道明白理解学会改变拥有失去错过遇见等待放弃坚持\n第次条规则只能一直往前走到埂边什么都还有没有\n请别问自己到了没有这就是爱婚姻成长岁月青春\n",
+
+  "_comment_lifeWindows": "the windows a computed figure is allowed to talk about (compute-life-window.mjs): the observation phase ends at from + (1/e) x (to - from). A window is the viewer's own input, not a fact, and the film has to say so on screen. The three below are the reference film's; compute-life-window.mjs falls back to exactly this list when the key is absent. Replace them — and see compute-optimal-stopping.mjs, which is the other worked example of the rule that every figure is computed, never invented.",
+  "lifeWindows": [
+    { "id": "decade", "label": "18–28 岁", "from": 18, "to": 28, "note": "十年，最常见的“择偶窗口”直觉" },
+    { "id": "university", "label": "大学四年", "from": 18, "to": 22, "note": "只算本科在校的四年" },
+    { "id": "twelve", "label": "18–30 岁", "from": 18, "to": 30, "note": "十二年" }
+  ]
+}

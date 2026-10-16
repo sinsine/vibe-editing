@@ -1,0 +1,27 @@
+{
+  "_comment": "封面文案 / cover copy. build-covers.mjs reads this file and renders it at every ratio. Nothing here is baked into the script.",
+
+  "_kicker": "顶部小字，通常放领域或方法名。建议 ≤22 个字符，全大写拉丁更利落。",
+  "kicker": "Optimal Stopping · 最优停止",
+
+  "_number": "主视觉数字。封面在信息流里只有 ~240px 宽，所以只放一个数字，且必须是全片最容易被记住的那个。",
+  "number": "37",
+  "unit": "%",
+
+  "_title": "片名。7 个汉字以内最好，超过就会在竖版里换行。",
+  "title": "苏格拉底的麦穗",
+
+  "_hook": "情绪钩子，一句话。它决定点击，数字决定记忆——两者不要重复同一个意思。",
+  "hook": "什么时候，才算“就是 ta 了”？",
+
+  "_hookEmphasis": "hook 里要被金色强调的片段，必须与 hook 中的文字完全一致；留空则整句不上色。",
+  "hookEmphasis": "就是 ta 了",
+
+  "_sizes": "要输出的比例。删掉不需要的行即可；每行会单独渲染并逐张校验尺寸。bilibili 的 1146×717 是平台推荐值，竖版 3:4 用于抖音主页网格。",
+  "sizes": [
+    { "id": "16x9", "w": 1920, "h": 1080, "note": "16:9 横版主封面" },
+    { "id": "4x3", "w": 1440, "h": 1080, "note": "4:3 信息流" },
+    { "id": "3x4", "w": 1080, "h": 1440, "note": "3:4 竖版（抖音主页网格）" },
+    { "id": "bili-1146x717", "w": 1146, "h": 717, "note": "B站创作中心推荐尺寸" }
+  ]
+}

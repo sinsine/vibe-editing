@@ -59,7 +59,11 @@ function collect(dir, rel = '', out = []) {
       if (EXCLUDE_DIRS.has(e.name)) continue;
       collect(p, r, out);
     } else {
-      if (EXCLUDE_FILES.has(e.name)) continue;
+      // these names are per-PROJECT files; only exclude them at the repository ROOT.
+      // Excluding by name anywhere silently dropped templates/vibe.config.json,
+      // templates/sfx-design.mjs and templates/cover-copy.json — the very files a new
+      // project copies — which is why the published templates/ held 7 files, not 10.
+      if (rel === '' && EXCLUDE_FILES.has(e.name)) continue;
       if (/\.(raw|tmp|log)$/i.test(e.name)) continue;
       out.push({ path: r, abs: p, bytes: fs.statSync(p).size });
     }
